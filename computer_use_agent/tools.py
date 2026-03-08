@@ -6,7 +6,34 @@ from google.genai import types
 _ctx: dict = {"pw": None, "browser": None, "page": None}
 
 
+async def _reset_ctx() -> None:
+    """Tear down any stale browser context."""
+    if _ctx["pw"] is not None:
+        try:
+            await _ctx["pw"].stop()
+        except Exception:
+            pass
+    _ctx["pw"] = None
+    _ctx["browser"] = None
+    _ctx["page"] = None
+
+
 async def _page():
+    """Return the active Playwright page, relaunching if the browser/page has crashed."""
+    # Check for a stale context and reset if needed.
+    if _ctx["browser"] is not None:
+        crashed = False
+        try:
+            if not _ctx["browser"].is_connected():
+                crashed = True
+            elif _ctx["page"] is None or _ctx["page"].is_closed():
+                crashed = True
+        except Exception:
+            crashed = True
+
+        if crashed:
+            await _reset_ctx()
+
     if _ctx["browser"] is None:
         _ctx["pw"] = await async_playwright().start()
         _ctx["browser"] = await _ctx["pw"].chromium.launch(headless=True)

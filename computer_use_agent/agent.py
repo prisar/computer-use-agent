@@ -12,7 +12,7 @@ from .tools import (
 
 root_agent = Agent(
     name="computer_use_agent",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     description="Controls a web browser to complete tasks on behalf of the user.",
     instruction=(
         "You are a computer use agent that controls a web browser with a 1280x720 viewport.\n"
