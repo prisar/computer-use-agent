@@ -113,3 +113,62 @@ async def browser_get_text() -> dict:
     p = await _page()
     text = await p.evaluate("document.body.innerText")
     return {"text": text[:5000]}
+
+
+async def browser_click_element(selector: str) -> dict:
+    """Click on an element specified by a CSS selector.
+
+    Args:
+        selector: The CSS selector of the element to click (e.g. 'button#submit').
+    """
+    p = await _page()
+    await p.click(selector)
+    return {"clicked_selector": selector}
+
+
+async def browser_type_element(selector: str, text: str) -> dict:
+    """Type text into an element specified by a CSS selector.
+
+    Args:
+        selector: The CSS selector of the input field.
+        text: The text to type.
+    """
+    p = await _page()
+    await p.fill(selector, text)
+    return {"typed": text, "selector": selector}
+
+
+async def browser_wait_for(selector: str, timeout_ms: int = 5000) -> dict:
+    """Wait for an element to appear in the DOM.
+
+    Args:
+        selector: The CSS selector to wait for.
+        timeout_ms: Timeout in milliseconds (default 5000).
+    """
+    p = await _page()
+    await p.wait_for_selector(selector, timeout=timeout_ms)
+    return {"waited_for": selector}
+
+
+async def browser_get_elements(selector: str = "button, a, input, [role='button']") -> dict:
+    """Get a list of interactive elements on the page with their text and coordinates.
+
+    Args:
+        selector: The CSS selector to find elements (default: common interactive elements).
+    """
+    p = await _page()
+    elements = await p.query_selector_all(selector)
+    results = []
+    for el in elements:
+        if await el.is_visible():
+            box = await el.bounding_box()
+            text = await el.inner_text()
+            if box:
+                results.append({
+                    "text": text.strip(),
+                    "x": box["x"] + box["width"] / 2,
+                    "y": box["y"] + box["height"] / 2,
+                    "selector": selector,
+                    "box": box
+                })
+    return {"elements": results[:50]}  # limit to 50 for context efficiency
